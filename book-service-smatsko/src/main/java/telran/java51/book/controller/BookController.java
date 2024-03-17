@@ -59,5 +59,10 @@ public class BookController {
   		return bookService.getPublisherByAuthor(author);
   	}
 
+    @DeleteMapping("/author/{authorName}")
+	AuthorDto removeAuthor(@PathVariable String authorName) {
+		return bookService.removeAuthor(authorName);
+	}
+    
     
 }

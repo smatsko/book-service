@@ -20,4 +20,6 @@ public interface BookService {
 	Iterable<AuthorDto> getBookAuthors(String isbn);
 
 	Iterable<String> getPublisherByAuthor(String author);
+
+	AuthorDto removeAuthor(String authorName);
 }
