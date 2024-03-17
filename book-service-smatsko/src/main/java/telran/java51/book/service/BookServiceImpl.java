@@ -36,11 +36,11 @@ public class BookServiceImpl implements BookService {
 		}
 		// Publisher
 		Publisher publisher = publisherRepository.findById(bookDto.getPublisher())
-				.orElse(publisherRepository.save(new Publisher(bookDto.getPublisher())));		
+				.orElseGet(() -> publisherRepository.save(new Publisher(bookDto.getPublisher())));		
 		// Authors
 		Set<Author> authors = bookDto.getAuthors().stream()
 				.map(a -> authorRepository.findById(a.getName())
-						.orElse(authorRepository.save(new Author(a.getName(), a.getBirthDate()))))
+						.orElseGet(() -> authorRepository.save(new Author(a.getName(), a.getBirthDate()))))
 						.collect(Collectors.toSet());	
 		Book book = new Book(bookDto.getIsbn(), bookDto.getTitle(), authors, publisher);
 		bookRepository.save(book);
@@ -58,7 +58,7 @@ public class BookServiceImpl implements BookService {
 	@Override
 	public BookDto deleteBookByIsbn(String isbn) {
 		Book book = bookRepository.findById(isbn).orElseThrow(EntityNotFoundException::new);
-		bookRepository.delete(book);
+		bookRepository.deleteById(isbn);
 		return modelMapper.map(book, BookDto.class);
 	}
 
@@ -83,9 +83,9 @@ public class BookServiceImpl implements BookService {
 
 	@Transactional(readOnly = true)
 	@Override
-	public Iterable<BookDto> getBooksByPublisher(String publisher) {
-		return bookRepository
-				.findByPublisher_PublisherName(publisher)
+	public Iterable<BookDto> getBooksByPublisher(String publisherName) {
+		Publisher publisher = publisherRepository.findById(publisherName).orElseThrow(EntityNotFoundException::new);
+		return publisher.getBooks().stream()
 				.map(b -> modelMapper.map(b, BookDto.class))
 				.collect(Collectors.toList());
 	}
@@ -103,12 +103,11 @@ public class BookServiceImpl implements BookService {
 	@Transactional(readOnly = true)
 	@Override
 	public Iterable<String> getPublisherByAuthor(String authorName) {
-		return bookRepository
-				.findByAuthors_Name(authorName)
-				.map(b -> b.getPublisher().toString())
-				.distinct()
-				.collect(Collectors.toList());	
-	}
+		return publisherRepository.findDistinctByBooksAuthorsName(authorName)
+				.map(Publisher::getPublisherName)
+				.collect(Collectors.toList());
+
+	}	
 
 	@Override
 	@Transactional
